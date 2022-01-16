@@ -1,8 +1,9 @@
 const github = require("@actions/github");
 const core = require("@actions/core");
+const fetch = require("node-fetch")
 
 const issueSentence = (issue) => {
-  return `- **${issue.title}** #${issue.number} by ${issue.user.login}\n`
+  return `- ${issue.title} by ${issue.user.login}\n`
 }
 
 const createDescription = (issues) => {
@@ -77,6 +78,7 @@ const createRelease = async (octokit, version, branch, body) => {
       milestone = milestones[0];
     }
   if(!milestone) {
+    core.info(`${repo} has not '${version}' milestone`)
     throw new Error("milestone is not found");
   }
   return milestone;
@@ -123,6 +125,9 @@ const generateDescriptionFromRepository = async (octokit, version, repository) =
     repo: repository,
   })
 
+  if(!milestone) {
+    return '';
+  }
   core.info(`Start create release for milestone ${milestone.title}`);
 
   const issues = await fetchIssues(
@@ -166,10 +171,21 @@ const generateReleaseNote = async (version) => {
   })).then((descriptions) => {
     return descriptions.reduce((des, current, index) => {
       return `${des}\n# ${repositories[index]}\n${current}`;
-    })
+    }, '')
   })
 
   await createRelease(octokit, version, branch, description);
+  await fetch('https://hooks.zapier.com/hooks/catch/11137744/b9i402e/', {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      version,
+      description,
+    })
+  })
 };
 
 module.exports = generateReleaseNote;

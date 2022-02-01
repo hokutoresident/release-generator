@@ -9,7 +9,7 @@ const issueSentenceForSlack = (issue) => {
 
 const issueSentenceForGitHub = (issue) => {
   const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
-  return `- [${issue.title}](#${url}) ${issue.user.login}\n`
+  return `- [${issue.title}](${url}) ${issue.user.login}\n`
 }
 
 const createDescriptionForGitHub = (issues) => {
@@ -224,7 +224,6 @@ const generateReleaseNote = async (version) => {
   const description = await Promise.all(repositories.map(async repo => {
     return await generateDescriptionFromRepository(octokit, version, repo);
   })).then((descriptions) => {
-    console.log(descriptions);
     return descriptions.reduce((des, current, index) => {
       return {
         descriptionForSlack: `${des}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
@@ -236,6 +235,7 @@ const generateReleaseNote = async (version) => {
     })
   })
 
+  console.log(description);
   await createRelease(octokit, version, branch, description['descriptionForGitHub']);
   // await fetch('https://hooks.zapier.com/hooks/catch/11137744/b9i402e/', {
   //   method: 'POST',

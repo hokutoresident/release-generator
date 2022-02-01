@@ -10,7 +10,7 @@ const fetch = __nccwpck_require__(467)
 
 const issueSentenceForSlack = (issue) => {
   const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
-  return `-<${url}| ${issue.title}> by ${issue.user.login}\n`
+  return `- <${url}| ${issue.title}> by ${issue.user.login}\n`
 }
 
 const issueSentenceForGitHub = (issue) => {

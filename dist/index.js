@@ -8,11 +8,17 @@ const github = __nccwpck_require__(5438);
 const core = __nccwpck_require__(2186);
 const fetch = __nccwpck_require__(467)
 
-const issueSentence = (issue) => {
-  return `- ${issue.title} by ${issue.user.login}\n`
+const issueSentenceForSlack = (issue) => {
+  const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
+  return `- <${url}| ${issue.title}> by ${issue.user.login}\n`
 }
 
-const createDescription = (issues) => {
+const issueSentenceForGitHub = (issue) => {
+  const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
+  return `- [${issue.title}](${url}) ${issue.user.login}\n`
+}
+
+const createDescriptionForGitHub = (issues) => {
   const labels = issues
     .map((issue) => issue.labels)
     .flatMap((issue) => issue)
@@ -31,16 +37,49 @@ const createDescription = (issues) => {
           issue.labels.filter((issueLabel) => label.name === issueLabel.name)
             .length > 0
       )
-      .map((issue) => issueSentence(issue));
+      .map((issue) => issueSentenceForGitHub(issue));
     const section = title.concat(...issuesForLabel);
     return body.concat(section);
   }, "")
 
   const labelEmptyIssues = issues
     .filter((issue) => issue.labels.length === 0)
-    .map((issue) => issueSentence(issue));
+    .map((issue) => issueSentenceForGitHub(issue));
 
   const title = "## Label is empty\n";
+  const emptySection = title.concat(...labelEmptyIssues);
+  return labelSections + emptySection;
+} 
+
+const createDescriptionForSlack = (issues) => {
+  const labels = issues
+    .map((issue) => issue.labels)
+    .flatMap((issue) => issue)
+    .reduce(
+      (labels, l) =>
+        labels.filter((v) => v.name === l.name).length > 0
+          ? labels
+          : labels.concat(l),
+      []
+    );  
+  const labelSections = labels.reduce((body, label) => {
+    const title = `*${label.name}*: ${label.description}\n`;
+    const issuesForLabel = issues
+      .filter(
+        (issue) =>
+          issue.labels.filter((issueLabel) => label.name === issueLabel.name)
+            .length > 0
+      )
+      .map((issue) => issueSentenceForSlack(issue));
+    const section = title.concat(...issuesForLabel);
+    return body.concat(section);
+  }, "")
+
+  const labelEmptyIssues = issues
+    .filter((issue) => issue.labels.length === 0)
+    .map((issue) => issueSentenceForSlack(issue));
+
+  const title = "*Label is empty*\n";
   const emptySection = title.concat(...labelEmptyIssues);
   return labelSections + emptySection;
 }
@@ -132,7 +171,10 @@ const generateDescriptionFromRepository = async (octokit, version, repository) =
   })
 
   if(!milestone) {
-    return '';
+    return {
+      descriptionForSlack: '',
+      descriptionForGitHub: '',
+    };
   }
   core.info(`Start create release for milestone ${milestone.title}`);
 
@@ -148,7 +190,12 @@ const generateDescriptionFromRepository = async (octokit, version, repository) =
     throw new Error("no results for issues");
   }
 
-  return createDescription(issues);
+  const descriptionForSlack = createDescriptionForSlack(issues);
+  const descriptionForGitHub = createDescriptionForGitHub(issues);
+  return {
+    descriptionForSlack,
+    descriptionForGitHub,
+  }
 }
 
 const generateReleaseNote = async (version) => {
@@ -172,15 +219,29 @@ const generateReleaseNote = async (version) => {
     "hokuto-functions"  
   ]
 
+  // descriptions: {
+  //   descriptionForSlack: string;
+  //   descriptionForGitHub: string;
+  // }[]
+  // description = {
+  //   descriptionForSlack: string;
+  //   descriptionForGitHub: string;
+  // }
   const description = await Promise.all(repositories.map(async repo => {
     return await generateDescriptionFromRepository(octokit, version, repo);
   })).then((descriptions) => {
     return descriptions.reduce((des, current, index) => {
-      return `${des}\n# ${repositories[index]}\n${current}`;
-    }, '')
+      return {
+        descriptionForSlack: `${des['descriptionForSlack']}\n*${repositories[index]}*\n${current['descriptionForSlack']}`,
+        descriptionForGitHub: `${des['descriptionForGitHub']}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
+      }
+    }, {
+      descriptionForSlack: '',
+      descriptionForGitHub: '',
+    })
   })
 
-  await createRelease(octokit, version, branch, description);
+  await createRelease(octokit, version, branch, description['descriptionForGitHub']);
   await fetch('https://hooks.zapier.com/hooks/catch/11137744/b9i402e/', {
     method: 'POST',
     mode: 'cors',
@@ -189,7 +250,7 @@ const generateReleaseNote = async (version) => {
     },
     body: JSON.stringify({
       version,
-      description,
+      description: description['descriptionForSlack'],
     })
   })
 };

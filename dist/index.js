@@ -230,7 +230,7 @@ const generateReleaseNote = async (version) => {
   const description = await Promise.all(repositories.map(async repo => {
     return await generateDescriptionFromRepository(octokit, version, repo);
   })).then((descriptions) => {
-    console.log(description);
+    console.log(descriptions);
     return descriptions.reduce((des, current, index) => {
       return {
         descriptionForSlack: `${des}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,

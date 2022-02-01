@@ -232,13 +232,18 @@ const generateReleaseNote = async (version) => {
   })).then((descriptions) => {
     return descriptions.reduce((des, current, index) => {
       console.log(repositories[index])
+      console.log('current');
       console.log(current);
+      console.log('des');
       console.log(des);
       return {
         descriptionForSlack: `${des}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
         descriptionForGitHub: `${des}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
       }
-    }, {})
+    }, {
+      descriptionForSlack: '',
+      descriptionForGitHub: '',
+    })
   })
 
   await createRelease(octokit, version, branch, description['descriptionForGitHub']);

@@ -9,7 +9,7 @@ const core = __nccwpck_require__(2186);
 const fetch = __nccwpck_require__(467)
 
 const issueSentence = (issue) => {
-  return `- ${issue.title} by ${issue.user.login}\n`
+  return `- <${issue.url}|${issue.title}> by ${issue.user.login}\n`
 }
 
 const createDescription = (issues) => {

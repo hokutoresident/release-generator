@@ -3,7 +3,7 @@ const core = require("@actions/core");
 const fetch = require("node-fetch")
 
 const issueSentence = (issue) => {
-  return `- ${issue.title} by ${issue.user.login}\n`
+  return `- <${issue.url}|${issue.title}> by ${issue.user.login}\n`
 }
 
 const createDescription = (issues) => {

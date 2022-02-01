@@ -7,10 +7,11 @@ const issueSentenceForSlack = (issue) => {
 }
 
 const issueSentenceForGitHub = (issue) => {
-  return `- [${issue.title}]() ${issue.user.login}\n`
+  return `- [${issue.title}](#${issue.number}) ${issue.user.login}\n`
 }
 
 const createDescriptionForGitHub = (issues) => {
+  console.log(issues[0]);
   const labels = issues
     .map((issue) => issue.labels)
     .flatMap((issue) => issue)
@@ -228,7 +229,10 @@ const generateReleaseNote = async (version) => {
         descriptionForSlack: `${des}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
         descriptionForGitHub: `${des}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
       }
-    }, '')
+    }, {
+      descriptionForSlack: '',
+      descriptionForGitHub: '',
+    })
   })
 
   await createRelease(octokit, version, branch, description['descriptionForGitHub']);

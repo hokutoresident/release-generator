@@ -3,15 +3,16 @@ const core = require("@actions/core");
 // const fetch = require("node-fetch")
 
 const issueSentenceForSlack = (issue) => {
-  return `-<${issue.url}| ${issue.title}> by ${issue.user.login}\n`
+  const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
+  return `-<${url}| ${issue.title}> by ${issue.user.login}\n`
 }
 
 const issueSentenceForGitHub = (issue) => {
-  return `- [${issue.title}](#${issue.number}) ${issue.user.login}\n`
+  const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
+  return `- [${issue.title}](#${url}) ${issue.user.login}\n`
 }
 
 const createDescriptionForGitHub = (issues) => {
-  console.log(issues[0]);
   const labels = issues
     .map((issue) => issue.labels)
     .flatMap((issue) => issue)
@@ -223,7 +224,7 @@ const generateReleaseNote = async (version) => {
   const description = await Promise.all(repositories.map(async repo => {
     return await generateDescriptionFromRepository(octokit, version, repo);
   })).then((descriptions) => {
-    // 
+    console.log(description);
     return descriptions.reduce((des, current, index) => {
       return {
         descriptionForSlack: `${des}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,

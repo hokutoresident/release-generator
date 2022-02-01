@@ -6,7 +6,7 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 const github = __nccwpck_require__(5438);
 const core = __nccwpck_require__(2186);
-// const fetch = require("node-fetch")
+const fetch = __nccwpck_require__(467)
 
 const issueSentenceForSlack = (issue) => {
   const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
@@ -231,11 +231,6 @@ const generateReleaseNote = async (version) => {
     return await generateDescriptionFromRepository(octokit, version, repo);
   })).then((descriptions) => {
     return descriptions.reduce((des, current, index) => {
-      console.log(repositories[index])
-      console.log('current');
-      console.log(current);
-      console.log('des');
-      console.log(des);
       return {
         descriptionForSlack: `${des['descriptionForSlack']}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
         descriptionForGitHub: `${des['descriptionForGitHub']}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
@@ -247,17 +242,17 @@ const generateReleaseNote = async (version) => {
   })
 
   await createRelease(octokit, version, branch, description['descriptionForGitHub']);
-  // await fetch('https://hooks.zapier.com/hooks/catch/11137744/b9i402e/', {
-  //   method: 'POST',
-  //   mode: 'cors',
-  //   headers: {
-  //     'Content-Type': 'application/json'
-  //   },
-  //   body: JSON.stringify({
-  //     version,
-  //     description,
-  //   })
-  // })
+  await fetch('https://hooks.zapier.com/hooks/catch/11137744/b9i402e/', {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      version,
+      description: description['descriptionForSlack'],
+    })
+  })
 };
 
 module.exports = generateReleaseNote;

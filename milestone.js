@@ -231,8 +231,8 @@ const generateReleaseNote = async (version) => {
       console.log('des');
       console.log(des);
       return {
-        descriptionForSlack: `${des}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
-        descriptionForGitHub: `${des}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
+        descriptionForSlack: `${des['descriptionForSlack']}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
+        descriptionForGitHub: `${des['descriptionForGitHub']}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
       }
     }, {
       descriptionForSlack: '',

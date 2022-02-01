@@ -226,7 +226,7 @@ const generateReleaseNote = async (version) => {
   })).then((descriptions) => {
     return descriptions.reduce((des, current, index) => {
       return {
-        descriptionForSlack: `${des['descriptionForSlack']}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
+        descriptionForSlack: `${des['descriptionForSlack']}\n*${repositories[index]}*\n${current['descriptionForSlack']}`,
         descriptionForGitHub: `${des['descriptionForGitHub']}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
       }
     }, {

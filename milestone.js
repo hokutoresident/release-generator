@@ -225,7 +225,9 @@ const generateReleaseNote = async (version) => {
     return await generateDescriptionFromRepository(octokit, version, repo);
   })).then((descriptions) => {
     return descriptions.reduce((des, current, index) => {
+      console.log(repositories[index])
       console.log(current);
+      console.log(des);
       return {
         descriptionForSlack: `${des}\n# ${repositories[index]}\n${current['descriptionForSlack']}`,
         descriptionForGitHub: `${des}\n# ${repositories[index]}\n${current['descriptionForGitHub']}`
@@ -233,7 +235,6 @@ const generateReleaseNote = async (version) => {
     }, {})
   })
 
-  console.log(description);
   await createRelease(octokit, version, branch, description['descriptionForGitHub']);
   // await fetch('https://hooks.zapier.com/hooks/catch/11137744/b9i402e/', {
   //   method: 'POST',

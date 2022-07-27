@@ -181,7 +181,11 @@ const generateDescriptionFromRepository = async (octokit, version, repository) =
   )
 
   if (issues.length === 0) {
-    throw new Error("no results for issues");
+    core.info("no results for issues");
+    return {
+      descriptionForSlack: '',
+      descriptionForGitHub: '',
+    };
   }
 
   const descriptionForSlack = createDescriptionForSlack(issues);

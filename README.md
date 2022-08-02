@@ -28,8 +28,4 @@ jobs:
 
 # Usage
 
-1. Create a milestone named `v1.0.0`
-2. Assign them milestone to pull requests
-3. From Actions Tab, press the `Run workflow` button.
-4. Select target branch and enter milestone name (e.g. `v1.0.0`)
-5. From Code Tab, you can see Draft release
+1. milestone.jsを修正したら `yarn prepare`を実行すると変更が反映されます

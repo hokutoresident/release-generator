@@ -1,6 +1,8 @@
 const github = require("@actions/github");
 const core = require("@actions/core");
+const artifact = require("@actions/artifact")
 const fetch = require("node-fetch")
+const fs = require("fs")
 
 const issueSentenceForSlack = (issue) => {
   const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
@@ -22,7 +24,7 @@ const createDescriptionForGitHub = (issues) => {
           ? labels
           : labels.concat(l),
       []
-    );  
+    );
   const labelSections = labels.reduce((body, label) => {
     const title = `## ${label.name}: ${label.description}\n`;
     const issuesForLabel = issues
@@ -43,7 +45,7 @@ const createDescriptionForGitHub = (issues) => {
   const title = "## Label is empty\n";
   const emptySection = title.concat(...labelEmptyIssues);
   return labelSections + emptySection;
-} 
+}
 
 const createDescriptionForSlack = (issues) => {
   const labels = issues
@@ -55,7 +57,7 @@ const createDescriptionForSlack = (issues) => {
           ? labels
           : labels.concat(l),
       []
-    );  
+    );
   const labelSections = labels.reduce((body, label) => {
     const title = `*${label.name}*: ${label.description}\n`;
     const issuesForLabel = issues
@@ -78,17 +80,18 @@ const createDescriptionForSlack = (issues) => {
   return labelSections + emptySection;
 }
 
-const createRelease = async (octokit, version, branch, body) => {
-  const version_without_v = version.slice(1, version.length)
-  return octokit.rest.repos.createRelease({
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
-    tag_name: version,
-    name: `Release ${version_without_v}`,
-    target_commitish: `${branch}`,
-    draft: true,
-    body: body,
+const uploadArtifact = async (version, body) => {
+  const artifactName = `${version}_description`;
+  const fileName = `${artifactName}.txt`;
+  fs.writeFile(fileName, `${body}`, (error) => {
+    if (!error) return;
+    console.log(`write file :${error}`);
   });
+  const artifactClient = artifact.create();
+  const files = [fileName];
+  const rootDirectory = '.';
+  const options = { continueOnError: false };
+  await artifactClient.uploadArtifact(artifactName, files, rootDirectory, options);
 }
 
 /**
@@ -101,7 +104,7 @@ const createRelease = async (octokit, version, branch, body) => {
  * }  
  * @returns milestone: object
  */
- const fetchTargetMilestone = async (octokit, {version, owner, repo}) => {
+const fetchTargetMilestone = async (octokit, { version, owner, repo }) => {
   let milestone = null;
   for await (const response of octokit.paginate.iterator(
     octokit.rest.issues.listMilestones,
@@ -109,14 +112,14 @@ const createRelease = async (octokit, version, branch, body) => {
       owner: owner,
       repo: repo,
     }
-    )) {
-      const milestones = response.data.filter((m) => m.title === version);
-      if (milestones.length === 0) {
-        return;
-      }
-      milestone = milestones[0];
+  )) {
+    const milestones = response.data.filter((m) => m.title === version);
+    if (milestones.length === 0) {
+      return;
     }
-  if(!milestone) {
+    milestone = milestones[0];
+  }
+  if (!milestone) {
     core.info(`${repo} has not '${version}' milestone`)
     throw new Error("milestone is not found");
   }
@@ -134,12 +137,12 @@ const createRelease = async (octokit, version, branch, body) => {
  * @returns issues: object[]
  */
 const fetchIssues = async (
-    octokit, {
-      owner, 
-      repo, 
-      mileStoneNumber
-    }
-  ) => {
+  octokit, {
+    owner,
+    repo,
+    mileStoneNumber
+  }
+) => {
   let responses = [];
   for await (const response of octokit.paginate.iterator(
     octokit.rest.issues.listForRepo,
@@ -164,7 +167,7 @@ const generateDescriptionFromRepository = async (octokit, version, repository) =
     repo: repository,
   })
 
-  if(!milestone) {
+  if (!milestone) {
     return {
       descriptionForSlack: '',
       descriptionForGitHub: '',
@@ -174,10 +177,10 @@ const generateDescriptionFromRepository = async (octokit, version, repository) =
 
   const issues = await fetchIssues(
     octokit, {
-      owner: github.context.repo.owner,
-      repo: repository,
-      mileStoneNumber: milestone.number,
-    }
+    owner: github.context.repo.owner,
+    repo: repository,
+    mileStoneNumber: milestone.number,
+  }
   )
 
   if (issues.length === 0) {
@@ -206,15 +209,10 @@ const generateReleaseNote = async (version) => {
   }
   const octokit = github.getOctokit(token);
 
-  const branch = core.getInput("branch");
-  if (typeof branch !== "string") {
-    throw new Error("branch not a string");
-  }
-
   const repositories = [
     github.context.repo.repo,
     "zefyr",
-    "hokuto-functions"  
+    "hokuto-functions"
   ]
 
   // descriptions: {
@@ -238,8 +236,7 @@ const generateReleaseNote = async (version) => {
       descriptionForGitHub: '',
     })
   })
-
-  await createRelease(octokit, version, branch, description['descriptionForGitHub']);
+  await uploadArtifact(version, description['descriptionForGitHub']);
   await fetch('https://hooks.zapier.com/hooks/catch/11137744/b9i402e/', {
     method: 'POST',
     mode: 'cors',

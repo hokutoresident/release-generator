@@ -1,8 +1,8 @@
 const github = require("@actions/github");
 const core = require("@actions/core");
-const artifact = require("@actions/artifact")
-const fetch = require("node-fetch")
-const fs = require("fs")
+const artifact = require("@actions/artifact");
+const fetch = require("node-fetch");
+const fs = require("fs");
 
 const issueSentenceForSlack = (issue) => {
   const url = issue.url.replace(/(\S*)\/hokutoresident/ig, 'https://github.com/hokutoresident');
@@ -166,7 +166,6 @@ const generateDescriptionFromRepository = async (octokit, version, repository) =
     owner: github.context.repo.owner,
     repo: repository,
   })
-
   if (!milestone) {
     return {
       descriptionForSlack: '',

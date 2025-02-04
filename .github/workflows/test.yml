@@ -13,8 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: maemae-dev/release-generator@main
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          version: ${{ github.event.inputs.version }}
-          branch: ${{ github.head_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          node-version: "20"
+
+      - name: Generate Release
+        run: node dist/index.js
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          INPUT_BRANCH: ${{ github.head_ref }}
+          INPUT_TOKEN: ${{ secrets.GITHUB_TOKEN }}

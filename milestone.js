@@ -1,6 +1,6 @@
 const github = require("@actions/github");
 const core = require("@actions/core");
-const artifact = require("@actions/artifact");
+const { DefaultArtifactClient } = require('@actions/artifact');
 const fetch = require("node-fetch");
 const fs = require("fs");
 
@@ -87,7 +87,7 @@ const uploadArtifact = async (version, body) => {
     if (!error) return;
     console.log(`write file :${error}`);
   });
-  const artifactClient = artifact.create();
+  const artifactClient = new DefaultArtifactClient();
   const files = [fileName];
   const rootDirectory = '.';
   const options = { continueOnError: false };

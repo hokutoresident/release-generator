@@ -95,19 +95,20 @@ const uploadArtifact = async (version, body) => {
 }
 
 /**
- * 
+ *
  * @param {octokit} octokit
- * @param {string} version 
+ * @param {string} version
  * @param {
  *   owner: string,
  *   repo: string
- * }  
+ * }
  * @returns milestone: object
  */
 const fetchTargetMilestone = async (octokit, { version, owner, repo }) => {
-  let milestone = null;
-  for await (const response of octokit.paginate.iterator(
-    octokit.rest.issues.listMilestones,
+  try {
+    let milestone = null;
+    for await (const response of octokit.paginate.iterator(
+      octokit.rest.issues.listMilestones,
     {
       owner: owner,
       repo: repo,
@@ -124,10 +125,14 @@ const fetchTargetMilestone = async (octokit, { version, owner, repo }) => {
     throw new Error("milestone is not found");
   }
   return milestone;
+  } catch (error) {
+    core.error(`Error fetching milestone for ${repo}: ${error.message}`);
+    throw error;
+  }
 }
 
 /**
- * 
+ *
  * @param {octokit} octokit
  * @param {
  *   owner: string,
@@ -222,6 +227,7 @@ const generateReleaseNote = async (version) => {
   //   descriptionForSlack: string;
   //   descriptionForGitHub: string;
   // }
+  core.info(`Start create release for milestone ${version}, repositories: ${repositories.join(', ')}`);
   const description = await Promise.all(repositories.map(async repo => {
     return await generateDescriptionFromRepository(octokit, version, repo);
   })).then((descriptions) => {
